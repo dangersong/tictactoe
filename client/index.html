@@ -1,0 +1,72 @@
+<html>
+<head>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.5.1/lodash.js"></script>
+</head>
+<body>
+  <div id="date"></div>
+  <div class="player"></div>
+  <br />
+  <div class="message"></div>
+  <br />
+  <div class="board" style="display: none">[gameboard placeholder]</div>
+  <br />
+  <div class="formWrap">
+    <form action="" style="display: none">
+      X: <input autocomplete="off" />
+      Y: <input autocomplete="off" />
+      <button>Send Move</button>
+    </form>
+  </div>
+
+  <script>
+    var socket = io.connect();
+    var $message = $('div.message');
+    var $player = $('div.player');
+    var $board = $('div.board');
+    var $moveForm = $('form:first');
+    var $moveXInput = $('form:first input');
+    var $moveYInput = $('form:first input + input');
+
+    // capture game state
+    socket.on('game_state', function(state) {
+      var html = 'state: ' + state.msg;
+      
+      $message.html(html);
+      if (state.gameState) {
+          $board.show();
+          $moveForm.show();
+        } else {
+          $board.hide();
+          $moveForm.hide();
+        }
+    });
+
+    // placeholder to handle moves
+    $moveForm.submit(function(form) {
+      form.preventDefault();
+      socket.emit('send_move', $moveXInput.val(), $moveYInput.val());
+      $moveXInput.val('');
+      $moveYInput.val('');
+      return false;
+    });
+
+    // current server time
+    socket.on('date', function(data) {
+      $('#date').text('time: ' + data.date);
+    });
+
+    $(document).ready(function() {
+      // add player on page load
+      socket.emit('add_player', function(state) { 
+        var htmlMessage = 'state: ' + state.msg
+        var htmlPlayer = 'playerId: ' + state.playerId;
+        
+        $message.html(htmlMessage);
+        $player.html(htmlPlayer);
+      });
+    });
+  </script>
+</body>
+</html> 
